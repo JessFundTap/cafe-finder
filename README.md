@@ -47,6 +47,19 @@ To get a key:
 
 The requested fields (opening hours, delivery, `serves*`) are in the Places **Nearby Search Enterprise + Atmosphere** SKU. Each search sends 2 requests. Examine the current Google Maps Platform prices before you deploy.
 
+## Deploy to GitHub Pages
+
+The workflow `.github/workflows/deploy.yml` tests, builds and deploys the app on each push to `main`.
+
+1. In the repository settings, go to **Pages**. Set **Source** to **GitHub Actions**.
+2. Go to **Secrets and variables > Actions**. Add a repository secret named `VITE_GOOGLE_MAPS_API_KEY` with your key. Without the secret, the site runs in demo mode.
+3. In Google Cloud Console, restrict the key to the HTTP referrer `https://jessfundtap.github.io/*`. The key is visible in the built JavaScript.
+4. Push to `main`, or run the workflow from the **Actions** tab.
+
+The site is at `https://jessfundtap.github.io/cafe-finder/`.
+
+A GitHub Pages site is public, even when the repository is private.
+
 ## Commands
 
 | Command | Action |
