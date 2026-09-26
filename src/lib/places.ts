@@ -1,4 +1,5 @@
-import type { Cafe, LatLng } from './types';
+import { analyzeCoffee } from './reviews';
+import type { Cafe, LatLng, Review } from './types';
 
 const ENDPOINT = 'https://places.googleapis.com/v1/places:searchNearby';
 
@@ -26,6 +27,8 @@ const FIELD_MASK = [
   'places.types',
   'places.priceLevel',
   'places.googleMapsUri',
+  // Up to 5 reviews per place. Same billing tier as the fields above.
+  'places.reviews',
 ].join(',');
 
 const PRICE_LEVELS: Record<string, number> = {
@@ -58,6 +61,13 @@ export interface PlaceResponse {
   types?: string[];
   priceLevel?: string;
   googleMapsUri?: string;
+  reviews?: {
+    rating?: number;
+    text?: { text: string };
+    originalText?: { text: string };
+    relativePublishTimeDescription?: string;
+    authorAttribution?: { displayName?: string; uri?: string };
+  }[];
 }
 
 /**
@@ -131,6 +141,18 @@ async function searchNearby(
 export function toCafe(p: PlaceResponse): Cafe {
   const types = p.types ?? [];
   const isCoffeePlace = types.includes('coffee_shop') || types.includes('cafe');
+  const reviews: Review[] = (p.reviews ?? [])
+    .map((r) => ({
+      // originalText is in the reviewer's language; text may be a machine translation.
+      text: r.text?.text ?? r.originalText?.text ?? '',
+      rating: r.rating,
+      author: r.authorAttribution?.displayName,
+      authorUrl: r.authorAttribution?.uri,
+      when: r.relativePublishTimeDescription,
+    }))
+    .filter((r) => r.text);
+  const coffee = analyzeCoffee(reviews);
+  const fromReviews = Object.fromEntries(coffee.products.map((prod) => [prod, true]));
   return {
     id: p.id,
     name: p.displayName?.text ?? 'Unnamed cafe',
@@ -153,8 +175,10 @@ export function toCafe(p: PlaceResponse): Cafe {
       dessert: p.servesDessert,
       vegetarian: p.servesVegetarianFood,
       bakery: types.includes('bakery') ? true : undefined,
+      ...fromReviews,
     },
     priceLevel: p.priceLevel ? PRICE_LEVELS[p.priceLevel] : undefined,
     mapsUrl: p.googleMapsUri,
+    coffee,
   };
 }

@@ -118,14 +118,14 @@ describe('rankCafes', () => {
   it('lets weights change the order', () => {
     const topRated = cafe({ id: 'top', rating: 4.9, ratingCount: 900, location: far.location });
     const meh = cafe({ id: 'meh', rating: 3.6, ratingCount: 900, location: near.location });
-    const ratingOnly = { rating: 1, distance: 0, products: 0, hours: 0, delivery: 0 };
-    const distanceOnly = { rating: 0, distance: 1, products: 0, hours: 0, delivery: 0 };
+    const ratingOnly = { coffee: 0, rating: 1, distance: 0, products: 0, hours: 0, delivery: 0 };
+    const distanceOnly = { coffee: 0, rating: 0, distance: 1, products: 0, hours: 0, delivery: 0 };
     expect(rankCafes([meh, topRated], origin, ratingOnly, filters, now)[0].cafe.id).toBe('top');
     expect(rankCafes([meh, topRated], origin, distanceOnly, filters, now)[0].cafe.id).toBe('meh');
   });
 
   it('returns 0 scores when all weights are 0', () => {
-    const zero = { rating: 0, distance: 0, products: 0, hours: 0, delivery: 0 };
+    const zero = { coffee: 0, rating: 0, distance: 0, products: 0, hours: 0, delivery: 0 };
     expect(rankCafes([near], origin, zero, filters, now)[0].score).toBe(0);
   });
 });
@@ -148,5 +148,20 @@ describe('toCafe', () => {
     expect(c.products.brunch).toBeUndefined();
     expect(c.priceLevel).toBe(2);
     expect(c.openNow).toBe(true);
+    expect(c.coffee?.score).toBeUndefined();
+  });
+
+  it('adds coffee insight and review products', () => {
+    const c = toCafe({
+      id: 'r',
+      location: { latitude: 1, longitude: 2 },
+      reviews: [
+        { text: { text: 'Amazing flat white and great oat milk.' }, authorAttribution: { displayName: 'Sam' } },
+      ],
+    });
+    expect(c.coffee?.mentions).toBe(1);
+    expect(c.coffee?.score).toBeGreaterThan(0.5);
+    expect(c.products.oatMilk).toBe(true);
+    expect(c.coffee?.quote?.author).toBe('Sam');
   });
 });

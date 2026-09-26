@@ -4,7 +4,18 @@ export default {
   theme: {
     extend: {
       colors: {
-        roast: { 50: '#faf6f2', 100: '#f0e6db', 500: '#8b5a3c', 700: '#5c3a24', 900: '#2e1d12' },
+        espresso: '#1d1410',
+        roast: '#4a2e20',
+        crema: { DEFAULT: '#c9772f', light: '#f5e6d6' },
+        foam: '#fbf9f6',
+        line: '#ece4da',
+        muted: '#7a6a5f',
+        sage: '#2e7a55',
+        brick: '#b4442f',
+      },
+      fontFamily: {
+        display: ['"Bricolage Grotesque"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['Figtree', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
     },
   },

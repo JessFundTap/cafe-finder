@@ -2,7 +2,8 @@ import { haversineMeters } from './geo';
 import type { Cafe, Filters, LatLng, RankedCafe, ScoreBreakdown, Weights } from './types';
 
 export const DEFAULT_WEIGHTS: Weights = {
-  rating: 3,
+  coffee: 3,
+  rating: 2,
   distance: 3,
   products: 1,
   hours: 2,
@@ -27,6 +28,10 @@ export function ratingScore(rating?: number, count?: number): number {
   const adjusted = (count * rating + PRIOR_WEIGHT * PRIOR_RATING) / (count + PRIOR_WEIGHT);
   // Almost all cafes sit between 3 and 5 stars, so spread that band over 0–1.
   return clamp01((adjusted - 3) / 2);
+}
+
+export function coffeeScore(cafe: Cafe): number {
+  return cafe.coffee?.score ?? UNKNOWN_SCORE;
 }
 
 export function distanceScore(meters: number): number {
@@ -62,13 +67,14 @@ export function rankCafes(
   filters: Filters,
   now: Date = new Date(),
 ): RankedCafe[] {
-  const weightSum =
-    weights.rating + weights.distance + weights.products + weights.hours + weights.delivery;
+  const keys = Object.keys(weights) as (keyof Weights)[];
+  const weightSum = keys.reduce((sum, k) => sum + weights[k], 0);
 
   return cafes
     .map((cafe) => {
       const distanceMeters = haversineMeters(origin, cafe.location);
       const breakdown: ScoreBreakdown = {
+        coffee: coffeeScore(cafe),
         rating: ratingScore(cafe.rating, cafe.ratingCount),
         distance: distanceScore(distanceMeters),
         products: productScore(cafe, filters.wantedProducts),
@@ -76,14 +82,7 @@ export function rankCafes(
         delivery: deliveryScore(cafe),
       };
       const weighted =
-        weightSum === 0
-          ? 0
-          : (weights.rating * breakdown.rating +
-              weights.distance * breakdown.distance +
-              weights.products * breakdown.products +
-              weights.hours * breakdown.hours +
-              weights.delivery * breakdown.delivery) /
-            weightSum;
+        weightSum === 0 ? 0 : keys.reduce((sum, k) => sum + weights[k] * breakdown[k], 0) / weightSum;
       return { cafe, distanceMeters, breakdown, score: Math.round(weighted * 100) };
     })
     .filter((r) => r.distanceMeters <= filters.radiusMeters)

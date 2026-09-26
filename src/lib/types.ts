@@ -11,7 +11,11 @@ export type Product =
   | 'lunch'
   | 'dessert'
   | 'vegetarian'
-  | 'bakery';
+  | 'bakery'
+  | 'oatMilk'
+  | 'specialty'
+  | 'filter'
+  | 'coldBrew';
 
 export const PRODUCTS: { id: Product; label: string }[] = [
   { id: 'coffee', label: 'Coffee' },
@@ -21,7 +25,41 @@ export const PRODUCTS: { id: Product; label: string }[] = [
   { id: 'dessert', label: 'Dessert' },
   { id: 'vegetarian', label: 'Vegetarian' },
   { id: 'bakery', label: 'Bakery' },
+  { id: 'oatMilk', label: 'Oat milk' },
+  { id: 'specialty', label: 'Specialty beans' },
+  { id: 'filter', label: 'Filter / pour over' },
+  { id: 'coldBrew', label: 'Cold brew' },
 ];
+
+/** Products that only come from review text, so "not found" means unknown, not "no". */
+export const REVIEW_PRODUCTS: Product[] = ['oatMilk', 'specialty', 'filter', 'coldBrew'];
+
+export interface Review {
+  text: string;
+  rating?: number;
+  author?: string;
+  authorUrl?: string;
+  /** For example "2 weeks ago". */
+  when?: string;
+}
+
+/** What the written reviews say about the coffee. */
+export interface CoffeeInsight {
+  /** 0–1. undefined when no review talks about the coffee. */
+  score?: number;
+  /** Number of review sentences that talk about the coffee. */
+  mentions: number;
+  positive: number;
+  negative: number;
+  reviewCount: number;
+  /** Drinks that reviewers name, most mentioned first. */
+  drinks: string[];
+  /** Coffee-related products found in the text. */
+  products: Product[];
+  /** Negative words used about the coffee, for example "bitter" or "lukewarm". */
+  warnings: string[];
+  quote?: { text: string; author?: string; authorUrl?: string; positive: boolean };
+}
 
 /** A cafe, normalised from the Google Places API (New) response. */
 export interface Cafe {
@@ -44,9 +82,11 @@ export interface Cafe {
   products: Partial<Record<Product, boolean>>;
   priceLevel?: number;
   mapsUrl?: string;
+  coffee?: CoffeeInsight;
 }
 
 export interface Weights {
+  coffee: number;
   rating: number;
   distance: number;
   products: number;
@@ -62,6 +102,7 @@ export interface Filters {
 }
 
 export interface ScoreBreakdown {
+  coffee: number;
   rating: number;
   distance: number;
   products: number;
